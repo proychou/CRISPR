@@ -1,0 +1,184 @@
+---
+title: 'Statistical analysis for: Viral diversity is an obligate consideration in
+  CRISPR/Cas9 designs for HIV cure.'
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+
+<!---
+Program Name: Viral diversity is an obligate consideration in CRISPR/Cas9 designs for HIV cure. (Roychudbury et al.)
+Creation Date: 2017-12-12
+Code Author: Bryan Mayer
+Project or Protocol: CRISPR (Pavitra Project 2017)
+Purpose or description of program: Statistical analysis
+Location of program: VIDD-Schiffer shared drive
+Location of input data:  VIDD-Schiffer shared drive
+--->
+
+## Setup 
+
+```{r load_libraries}
+
+######################### LOAD PACKAGES #########################
+
+suppressPackageStartupMessages({
+  library(lmerTest) # mixed models
+  library(multcomp) # statistical tests
+  library(ICC) #intraclass correlation coefficients
+  library(tidyverse) # data manipulation and plots
+  theme_set(theme_bw())
+})
+
+
+dat_all = read_csv(file = "All_pts_matches_highcov.csv")
+dat = subset(dat_all,  from_consensus != "patient")
+
+```
+
+
+```{r data_view}
+
+ggplot(data = dat, aes(x = from_consensus, colour = patient,y = tgt_match_perc_exact)) +
+  geom_boxplot()
+
+```
+
+## Methods
+
+The goal of this analysis is to test whether targeting percentages vary by the consensus strain used to create the guides (update this). To test whether there is overall differences in mean of target percentages, a mixed model will be fit with target percentage as the outcome and the consensus strain as the predictors. A random intercept for each subject by consensus strain will all be estimated to account for within subject and group variation across the repeated measures. Overall tests will be performed from ANOVA for mixed models using the lmerTest package in R (citation). Post-hoc tests will be used for pairwise comparisons using the general linear hypothesis testing procedure for mixed models in the multcomp package in R (citation). Adjustment for multiple testing uses the single step method. 
+
+As a sensitivity analysis, a less efficient approach will be considered where the repeated target percentages are averaged within consensus strain by patient. Paired t-test will then be performed between each pair of consensus strains. This is equivalent to the results from a mixed model with a random intercept by patient comparing only two consensus strains.
+
+
+
+## Mixed model analysis
+
+
+### All data
+
+```{r lmm}
+
+lmm = lmer(tgt_match_perc_exact ~ from_consensus + (from_consensus|patient), data = dat_all)
+
+ph_tests = summary(glht(lmm, linfct = mcp(from_consensus = "Tukey")), test = adjusted("none")) %>% broom::tidy() %>%
+  select(lhs, p.value) %>% rename(pvalue_unadjusted = p.value)
+ph_tests_adj = summary(glht(lmm, linfct = mcp(from_consensus = "Tukey")), test = adjusted("single-step")) %>% broom::tidy() %>%
+  left_join(ph_tests, by = "lhs")
+
+grp_test = anova(lmm)$`Pr(>F)`
+
+results_tab = ph_tests_adj %>% rename(pvalue = p.value, mean_difference = estimate) %>%
+  mutate(comparison = paste0(lhs, " == 0")) %>%
+  select(comparison, mean_difference, pvalue, pvalue_unadjusted) 
+
+knitr::kable(results_tab, caption = paste0("Post-hoc comparisons (p-values corrected using single-step method). Overall group test (at least one group is different) (p = ", grp_test, ")"), digits = 4)
+
+```
+
+
+### Excluding the patient group
+
+```{r lmm_sub}
+
+lmm_sub = lmer(tgt_match_perc_exact ~ from_consensus + (from_consensus|patient), data = dat)
+
+ph_tests_sub = summary(glht(lmm_sub, linfct = mcp(from_consensus = "Tukey")), test = adjusted("none")) %>% broom::tidy() %>%
+  select(lhs, p.value) %>% rename(pvalue_unadjusted = p.value)
+ph_tests_adj_sub = summary(glht(lmm_sub, linfct = mcp(from_consensus = "Tukey")), test = adjusted("single-step")) %>% broom::tidy() %>%
+  left_join(ph_tests_sub, by = "lhs")
+
+grp_test_sub = anova(lmm_sub)$`Pr(>F)`
+
+results_tab_sub = ph_tests_adj_sub %>% rename(pvalue = p.value, mean_difference = estimate) %>%
+  mutate(comparison = paste0(lhs, " == 0")) %>%
+  select(comparison, mean_difference, pvalue, pvalue_unadjusted)
+
+
+knitr::kable(results_tab_sub,  caption = paste0("Post-hoc comparisons (p-values corrected using single-step method) for the consensus strains only. Overall group test (at least one group is different) (p = ", grp_test_sub, ")"), digits = 4)
+
+```
+
+
+
+## Sensitivity analysis: Paired t-test analysis
+
+```{r}
+consensus_strains = sort(unique(dat_all$from_consensus))
+n_strains = length(consensus_strains)
+
+
+# loop through each pairwise strain combination and do paired test
+paired_results = plyr::ldply(1:(n_strains - 1), function(strain_i){
+  plyr::ldply((strain_i + 1):n_strains, function(strain_j){
+
+    strain1 = consensus_strains[strain_i]
+    strain2 = consensus_strains[strain_j]
+    
+    test_data = subset(dat_all, from_consensus %in% c(strain1, strain2)) %>%
+      group_by(patient, from_consensus) %>%
+      summarize(
+        mean_tgt_pct = mean(tgt_match_perc_exact)
+      ) %>%
+      arrange(from_consensus, patient)
+    
+    
+    grp_means = test_data %>% group_by(from_consensus) %>% summarize(mean_grp = mean(mean_tgt_pct))
+    
+    res = t.test(mean_tgt_pct ~ from_consensus, data = test_data, paired = T)
+    
+    lmm_res = lmer(mean_tgt_pct ~ from_consensus + (1|patient), data = test_data)
+    
+    data.frame(
+      group1 = strain1,
+      group2 = strain2,
+      group1_mean = grp_means$mean_grp[grp_means$from_consensus == strain1],
+      group2_mean = grp_means$mean_grp[grp_means$from_consensus == strain2],
+      diff = res$estimate,
+      CI_out = paste(round(res$conf.int, 4), collapse = "--"),
+      pvalue = res$p.value,
+      pvalue_lmm = coef(summary(lmm_res))[2,5],
+      se_lmm1 = coef(summary(lmm_res))[1,2],
+      se_lmm2 = coef(summary(lmm_res))[2,2],
+      ptest = t.test(test_data$mean_tgt_pct[test_data$from_consensus == strain1], 
+                     test_data$mean_tgt_pct[test_data$from_consensus == strain2], paired = T)$p.value
+    )
+  })
+})
+
+#switching the order to match the lmm results
+paired_tab = paired_results %>% mutate(comparison = paste0(paste(group2, group1, sep = " - "), " == 0"), 
+                          mean_difference = -round(diff, 4), 
+                          p_value = round(pvalue, 3),
+                          CI_95pct = paste0("(", gsub("--", ", ", CI_out), ")")) %>%
+  select(comparison, mean_difference, CI_95pct, p_value)
+
+knitr::kable(paired_tab, caption = "Paired tests. Unadjusted P-values")
+
+
+```
+
+```{r comparisons}
+comparison_tab = results_tab %>% rename(full_diff = mean_difference, full_pvalue = pvalue, full_pvalue_unadj = pvalue_unadjusted) %>%
+  left_join(
+   results_tab_sub %>% rename(sub_diff = mean_difference, sub_pvalue = pvalue, sub_pvalue_unadj = pvalue_unadjusted),
+   by = "comparison"
+  ) %>%
+  left_join(
+   paired_tab %>% rename(paired_diff = mean_difference, paired_pvalue_unadj = p_value),
+   by = "comparison"
+  )
+
+knitr::kable(select(comparison_tab, comparison, ends_with("diff")), digits = 4, caption = "Comparison of estimated differences by method.")
+
+knitr::kable(select(comparison_tab, contains("pvalue")) %>%
+               select(ends_with("unadj"), everything()), 
+             digits = 4, caption = "Comparison of estimated p-values by method.")
+
+
+```
+
+
+
