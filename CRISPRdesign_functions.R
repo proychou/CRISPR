@@ -64,10 +64,7 @@ find_guides<-function(ref_seq,pattern_fwd='NGG',guide_length=20){
 		stringsAsFactors=F)%>%
 		mutate(length=str_length(gseq),
 					 guide=substr(gseq,1,guide_length),
-					 pam=substr(gseq,guide_length+1,guide_length+nchar(pattern_fwd)),
-					 g_1=str_sub(gseq,1,1)=='G',
-					 g_2=str_sub(gseq,2,2)=='G',
-					 g_3=str_sub(gseq,3,3)=='G');
+					 pam=substr(gseq,guide_length+1,guide_length+nchar(pattern_fwd)));
 	head(candidate_guides);
 	return(candidate_guides)
 	
