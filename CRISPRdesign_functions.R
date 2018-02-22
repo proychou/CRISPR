@@ -49,12 +49,14 @@ find_guides<-function(ref_seq,pattern_fwd='NGG',guide_length=20){
 	guide_seqs_fwd<-unique(guide_seqs_fwd);
 	guide_seqs_rev<-unique(guide_seqs_rev);
 	print('Unique hits:')
-	print(length(guide_seqs_fwd)+length(guide_seqs_rev))
+	print(length(guide_seqs_fwd)+length(guide_seqs_rev));
 	
-	#Analyze guide frequency: For each candidate guide, record direction it was found, length
-	# (they're all the same length),and whether there's a G in position 1, 2 and 3. 
-	# Then look for the number of occurrences of each guide in the forward and reverse 
-	# directions within the list of sequences for all group M.
+	#Remove any guides with ambiguous characters
+	if(any(grepl('M|R|W|S|Y|K|V|H|D|B|N|-',guide_seqs_fwd))){
+	  guide_seqs_fwd<-guide_seqs_fwd[-grep('M|R|W|S|Y|K|V|H|D|B|N|-',guide_seqs_fwd)];
+	  guide_seqs_rev<-guide_seqs_rev[-grep('M|R|W|S|Y|K|V|H|D|B|N|-',guide_seqs_rev)];
+	}
+	print(length(guide_seqs_fwd)+length(guide_seqs_rev));
 	
 	#Analyze guides
 	candidate_guides<-data.frame(
