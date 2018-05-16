@@ -2,6 +2,7 @@
 title: 'Statistical analysis for: Viral diversity is an obligate consideration in
   CRISPR/Cas9 designs for HIV cure.'
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 editor_options:
@@ -18,7 +19,11 @@ Location of program: VIDD-Schiffer shared drive
 Location of input data:  VIDD-Schiffer shared drive
 --->
 
-## Setup 
+## Methods
+
+The goal of this analysis is to test whether targeting percentages vary by the consensus strain used to create the guides. To test whether there are overall differences in mean of target percentages, a mixed model was fit with target percentage as the outcome and the consensus strain as the predictors. A random intercept for each subject by consensus strain was estimated to account for within subject and group variation across the repeated measures. Overall tests was performed from ANOVA for mixed models using the lmerTest package in R. Post-hoc tests were used for pairwise comparisons using the general linear hypothesis testing procedure for mixed models in the multcomp package in R. Adjustment for multiple testing used the single step method. 
+
+## Data Setup 
 
 ```{r load_libraries}
 
@@ -29,43 +34,100 @@ suppressPackageStartupMessages({
   library(multcomp) # statistical tests
   library(ICC) #intraclass correlation coefficients
   library(tidyverse) # data manipulation and plots
+  library(knitr)
+  library(kableExtra)
   theme_set(theme_bw())
 })
 
+opts_chunk$set(tidy = TRUE, cache = TRUE, messages = FALSE, warning = FALSE, echo = FALSE)
 
-dat_all = read_csv(file = "All_pts_matches_highcov.csv")
-dat = subset(dat_all,  from_consensus != "patient")
 
+dat_all = read_csv(file = "All_pts_matches_highcov.csv") %>%
+  group_by(patient, gseq) %>%
+  mutate(
+    total_consensus = n_distinct(from_consensus),
+    groupings = paste(unique(from_consensus), collapse = ","),
+    range_pct = diff(range(tgt_match_perc_exact)),
+    conserved = total_consensus >= 2
+    )
+
+```
+## Results
+
+### Shared gseq
+
+```{r}
+
+# dont want to double count
+conserve_summary = dat_all %>%
+  group_by(patient, gseq, total_consensus, conserved) %>%
+  summarize(
+    tgt_pct = unique(tgt_match_perc_exact)
+  )
+
+x1 = ggplot(data = conserve_summary, 
+       aes(x = factor(total_consensus), y = tgt_pct)) +
+  geom_boxplot(aes(fill = patient))
+
+ggplot(data = conserve_summary, aes(x = factor(conserved), y = tgt_pct)) +
+  geom_boxplot(aes(fill = patient))
+
+total_guide = dat_all %>% group_by(guide, patient) %>%
+  summarize(total = n_distinct(from_consensus))
+
+total_shared = dat_all %>% 
+  group_by(gseq, patient) %>%
+  summarize(total_consensus = n_distinct(from_consensus))
+
+total_shared_summary = total_shared %>% group_by(patient) %>%
+  mutate(total_distinct = n()) %>%
+  group_by(patient, total_consensus) %>%
+  summarize(
+    total = n(),
+    prop = n()/unique(total_distinct)
+  )
+  
+
+p1 = ggplot(data = total_shared_summary, aes(x = total_consensus, 
+                                     y = prop,
+                                     fill = patient)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  scale_y_continuous(labels = scales::percent)
+
+p2 = ggplot(data = total_guide, aes(x = total, fill = patient)) +
+  geom_bar(position = "dodge")
+
+#cowplot::plot_grid(p1, p2, nrow = 2)
+
+p1
+
+
+#ggsave("~/Desktop/unique_percent.png", cowplot::plot_grid(p1,x1, nrow = 2))
 ```
 
 
-```{r data_view}
-
-ggplot(data = dat, aes(x = from_consensus, colour = patient,y = tgt_match_perc_exact)) +
-  geom_boxplot()
-
-```
-
-## Methods
-
-The goal of this analysis is to test whether targeting percentages vary by the consensus strain used to create the guides (update this). To test whether there is overall differences in mean of target percentages, a mixed model will be fit with target percentage as the outcome and the consensus strain as the predictors. A random intercept for each subject by consensus strain will all be estimated to account for within subject and group variation across the repeated measures. Overall tests will be performed from ANOVA for mixed models using the lmerTest package in R (citation). Post-hoc tests will be used for pairwise comparisons using the general linear hypothesis testing procedure for mixed models in the multcomp package in R (citation). Adjustment for multiple testing uses the single step method. 
-
-As a sensitivity analysis, a less efficient approach will be considered where the repeated target percentages are averaged within consensus strain by patient. Paired t-test will then be performed between each pair of consensus strains. This is equivalent to the results from a mixed model with a random intercept by patient comparing only two consensus strains.
-
-
+\clearpage
 
 ## Mixed model analysis
 
-
-### All data
-
 ```{r lmm}
+
+# patient vs pooled group
+
+dat_all$pool_con = with(dat_all, ifelse(from_consensus == "patient", "patient", "pooled subtype"))
+
+lmm_pool = lmer(tgt_match_perc_exact ~ pool_con + (pool_con|patient), data = dat_all)
+
+# all groups
 
 lmm = lmer(tgt_match_perc_exact ~ from_consensus + (from_consensus|patient), data = dat_all)
 
-ph_tests = summary(glht(lmm, linfct = mcp(from_consensus = "Tukey")), test = adjusted("none")) %>% broom::tidy() %>%
+ph_tests = summary(glht(lmm, linfct = mcp(from_consensus = "Tukey")), test = adjusted("none")) %>%
+  broom::tidy() %>%
   select(lhs, p.value) %>% rename(pvalue_unadjusted = p.value)
-ph_tests_adj = summary(glht(lmm, linfct = mcp(from_consensus = "Tukey")), test = adjusted("single-step")) %>% broom::tidy() %>%
+
+ph_tests_adj = summary(glht(lmm, linfct = mcp(from_consensus = "Tukey")), 
+                       test = adjusted("single-step")) %>% broom::tidy() %>%
   left_join(ph_tests, by = "lhs")
 
 grp_test = anova(lmm)$`Pr(>F)`
@@ -74,14 +136,26 @@ results_tab = ph_tests_adj %>% rename(pvalue = p.value, mean_difference = estima
   mutate(comparison = paste0(lhs, " == 0")) %>%
   select(comparison, mean_difference, pvalue, pvalue_unadjusted) 
 
-knitr::kable(results_tab, caption = paste0("Post-hoc comparisons (p-values corrected using single-step method). Overall group test (at least one group is different) (p = ", grp_test, ")"), digits = 4)
+kable(arrange(results_tab, comparison),
+      caption = paste0("Post-hoc comparisons (p-values corrected using single-step method). Overall group test (at least one group is different) (p = ", round(grp_test, 3), ")"), digits = 4, format = "latex", booktabs = T, linesep = "") %>%
+  kableExtra::kable_styling(latex_options = c("striped"))
 
 ```
 
 
-### Excluding the patient group
 
-```{r lmm_sub}
+```{r lmm_sub, eval = F}
+
+# this analysis excludes the patient group
+
+dat = subset(dat_all,  from_consensus != "patient") %>%
+  group_by(patient, gseq) %>%
+  mutate(
+    total_consensus = n_distinct(from_consensus),
+    groupings = paste(unique(from_consensus), collapse = ","),
+    range_pct = diff(range(tgt_match_perc_exact)),
+    conserved = total_consensus >= 2
+    )
 
 lmm_sub = lmer(tgt_match_perc_exact ~ from_consensus + (from_consensus|patient), data = dat)
 
@@ -101,84 +175,109 @@ knitr::kable(results_tab_sub,  caption = paste0("Post-hoc comparisons (p-values 
 
 ```
 
+\clearpage
 
-
-## Sensitivity analysis: Paired t-test analysis
-
-```{r}
-consensus_strains = sort(unique(dat_all$from_consensus))
-n_strains = length(consensus_strains)
-
-
-# loop through each pairwise strain combination and do paired test
-paired_results = plyr::ldply(1:(n_strains - 1), function(strain_i){
-  plyr::ldply((strain_i + 1):n_strains, function(strain_j){
-
-    strain1 = consensus_strains[strain_i]
-    strain2 = consensus_strains[strain_j]
-    
-    test_data = subset(dat_all, from_consensus %in% c(strain1, strain2)) %>%
-      group_by(patient, from_consensus) %>%
-      summarize(
-        mean_tgt_pct = mean(tgt_match_perc_exact)
-      ) %>%
-      arrange(from_consensus, patient)
-    
-    
-    grp_means = test_data %>% group_by(from_consensus) %>% summarize(mean_grp = mean(mean_tgt_pct))
-    
-    res = t.test(mean_tgt_pct ~ from_consensus, data = test_data, paired = T)
-    
-    lmm_res = lmer(mean_tgt_pct ~ from_consensus + (1|patient), data = test_data)
-    
-    data.frame(
-      group1 = strain1,
-      group2 = strain2,
-      group1_mean = grp_means$mean_grp[grp_means$from_consensus == strain1],
-      group2_mean = grp_means$mean_grp[grp_means$from_consensus == strain2],
-      diff = res$estimate,
-      CI_out = paste(round(res$conf.int, 4), collapse = "--"),
-      pvalue = res$p.value,
-      pvalue_lmm = coef(summary(lmm_res))[2,5],
-      se_lmm1 = coef(summary(lmm_res))[1,2],
-      se_lmm2 = coef(summary(lmm_res))[2,2],
-      ptest = t.test(test_data$mean_tgt_pct[test_data$from_consensus == strain1], 
-                     test_data$mean_tgt_pct[test_data$from_consensus == strain2], paired = T)$p.value
-    )
+```{r reproducibility, results="asis"}
+suppressMessages({
+  library(data.table)
+  library(xtable)
   })
-})
 
-#switching the order to match the lmm results
-paired_tab = paired_results %>% mutate(comparison = paste0(paste(group2, group1, sep = " - "), " == 0"), 
-                          mean_difference = -round(diff, 4), 
-                          p_value = round(pvalue, 3),
-                          CI_95pct = paste0("(", gsub("--", ", ", CI_out), ")")) %>%
-  select(comparison, mean_difference, CI_95pct, p_value)
+my_session_info <- devtools::session_info()
 
-knitr::kable(paired_tab, caption = "Paired tests. Unadjusted P-values")
+platform <- my_session_info[[1]]
+packages <- my_session_info[[2]]
+
+# TABLE 1
+my_session_info1 <- data.table::data.table(
+  name = names(platform),
+  value = matrix(unlist(platform), nrow = length(platform)))
+
+my_current_input <- ifelse(is.null(ci <- knitr::current_input()), 'No Input File Detected', ci)
+
+file_name <-  data.table::data.table(
+  name = 'file name',
+  value = my_current_input)
+
+gitremote <-  substr(remote <- system("git remote -v", intern = TRUE)[1],
+                     regexpr("\t", remote) + 1,
+                     regexpr(" ", remote) - 1)
+
+
+# Git Remote connection, so getting url and path
+all_git_files <- system('git ls-files -co --no-empty-directory --full-name', intern = TRUE)
+folder_info_in <- sub(paste0('/', my_current_input), '',
+                        all_git_files[grep(my_current_input, all_git_files)])
+
+  if(length(folder_info_in)==0){
+    folder_info_in <- 'No Location Detected'
+  } else {
+    folder_info_in <- folder_info_in[sapply(folder_info_in,
+                                            function(x){length(grep(x, getwd())) == 1})]
+    }
+  
+  # Dropping matching file names that do not match folder path
+  folder_info <- data.table(
+    name = 'location',
+    value = "https://github.com/bryanmayer/CRISPR")
+  url_info <- data.table::data.table(
+    name = 'repo',
+    value = "https://github.com/bryanmayer/CRISPR")
+
+  my_session_info1 <- data.table::rbindlist(list(my_session_info1, url_info, folder_info, file_name))
+
+xtab <- xtable(x = my_session_info1,
+               caption = 'Supplemental Table: Reproducibility Software Session Information',
+               label = 'session_info')
+print(xtab, include.rownames = FALSE, include.colnames = FALSE, size = "\\footnotesize")
+
+
+# TABLE 2
+my_session_info2 <- data.table::data.table(
+  matrix(unlist(packages), ncol = length(packages))
+  )[V2=='*'][, V2 := NULL] # Only want attached packages
+data.table::setnames(my_session_info2, c(paste('V', c(1, 3, 4, 5), sep = '')), names(packages)[-2])
+
+# Adding in Data Versions
+if(nrow(my_session_info2)>0){
+  my_session_info2[, data.version := as.character(packageDescription(package, fields = 'DataVersion')), by = package]
+}
+
+if(my_session_info2[, all(is.na(data.version))]){
+  my_session_info2 <- my_session_info2[, .(package, version, date, source)]
+} else {
+  my_session_info2[is.na(data.version), data.version := '']
+  setcolorder(my_session_info2, c('package', 'version', 'data.version', 'date', 'source'))
+}
+
+# if this is a vignette in a package, add the data package without loading it
+if(grepl("vignettes", getwd()) & file.exists('../DESCRIPTION')){
+  thisRow <- my_session_info2[1]
+  rd <- roxygen2:::read.description("../DESCRIPTION")
+  thisRow[,
+          `:=`(package = rd$Package,
+               version = rd$Version,
+               `data version` = rd$DataVersion,
+               date = rd$Date,
+               source = url_info$value)]
+
+# if local repo path is too long, break it into two lines
+# (this assumes that it doesn't need to wrap to 3 lines)
+if(nchar(thisRow$source) > 60){
+  slashes <- gregexpr("/", thisRow$source, fixed=TRUE)[[1]]
+  p1 <- substr(thisRow$source, 1, slashes[which(slashes>30)][1])
+  p2 <- substr(thisRow$source, slashes[which(slashes>30)][1]+1, 500)
+  newsource <- gsub("_", "\\_", paste0(p1, " \\\\ \n", p2), fixed=TRUE)
+  thisRow$source <- paste0("\\parbox[t]{3in}{", newsource, "}")
+}
+
+my_session_info2 <- rbindlist(list(my_session_info2, thisRow), use.names=TRUE, fill=TRUE)
+setcolorder(my_session_info2, c('package', 'version', 'data version', 'date', 'source'))
+}
+
+xtab <- xtable(x = my_session_info2, caption = 'Supplemental Table: Reproducibility Software Package Version Information', label = 'session_info2')
+print(xtab, include.rownames = FALSE, size = "\\footnotesize", sanitize.text.function=function(x){x})
 
 
 ```
-
-```{r comparisons}
-comparison_tab = results_tab %>% rename(full_diff = mean_difference, full_pvalue = pvalue, full_pvalue_unadj = pvalue_unadjusted) %>%
-  left_join(
-   results_tab_sub %>% rename(sub_diff = mean_difference, sub_pvalue = pvalue, sub_pvalue_unadj = pvalue_unadjusted),
-   by = "comparison"
-  ) %>%
-  left_join(
-   paired_tab %>% rename(paired_diff = mean_difference, paired_pvalue_unadj = p_value),
-   by = "comparison"
-  )
-
-knitr::kable(select(comparison_tab, comparison, ends_with("diff")), digits = 4, caption = "Comparison of estimated differences by method.")
-
-knitr::kable(select(comparison_tab, contains("pvalue")) %>%
-               select(ends_with("unadj"), everything()), 
-             digits = 4, caption = "Comparison of estimated p-values by method.")
-
-
-```
-
-
 
