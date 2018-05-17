@@ -2,9 +2,8 @@
 title: 'Statistical analysis for: Viral diversity is an obligate consideration in
   CRISPR/Cas9 designs for HIV cure.'
 output:
-  pdf_document: default
-  html_document:
-    df_print: paged
+  pdf_document: 
+    keep_tex: true
 editor_options:
   chunk_output_type: inline
 ---
@@ -30,16 +29,17 @@ The goal of this analysis is to test whether targeting percentages vary by the c
 ######################### LOAD PACKAGES #########################
 
 suppressPackageStartupMessages({
+  library(broom)
   library(lmerTest) # mixed models
   library(multcomp) # statistical tests
-  library(ICC) #intraclass correlation coefficients
   library(tidyverse) # data manipulation and plots
   library(knitr)
   library(kableExtra)
   theme_set(theme_bw())
 })
 
-opts_chunk$set(tidy = TRUE, cache = TRUE, messages = FALSE, warning = FALSE, echo = FALSE)
+opts_chunk$set(tidy = TRUE, cache = TRUE, messages = FALSE, warning = FALSE, echo = FALSE,
+               tidy.opts=list(width.cutoff=80))
 
 
 dat_all = read_csv(file = "All_pts_matches_highcov.csv") %>%
@@ -52,93 +52,89 @@ dat_all = read_csv(file = "All_pts_matches_highcov.csv") %>%
     )
 
 ```
-## Results
 
-### Shared gseq
+```{r summary}
 
-```{r}
-
-# dont want to double count
-conserve_summary = dat_all %>%
-  group_by(patient, gseq, total_consensus, conserved) %>%
+summary = dat_all %>%
+  group_by(from_consensus, patient) %>%
   summarize(
-    tgt_pct = unique(tgt_match_perc_exact)
+    n = n(),
+    mean_match = mean(tgt_match_perc_exact)
+  ) %>% group_by(from_consensus) %>%
+  summarize(
+    patients = 4,
+    total_targets = sum(n),
+    mean_pct = paste0(round(100 * mean(mean_match), 1), "%")
   )
 
-x1 = ggplot(data = conserve_summary, 
-       aes(x = factor(total_consensus), y = tgt_pct)) +
-  geom_boxplot(aes(fill = patient))
-
-ggplot(data = conserve_summary, aes(x = factor(conserved), y = tgt_pct)) +
-  geom_boxplot(aes(fill = patient))
-
-total_guide = dat_all %>% group_by(guide, patient) %>%
-  summarize(total = n_distinct(from_consensus))
-
-total_shared = dat_all %>% 
-  group_by(gseq, patient) %>%
-  summarize(total_consensus = n_distinct(from_consensus))
-
-total_shared_summary = total_shared %>% group_by(patient) %>%
-  mutate(total_distinct = n()) %>%
-  group_by(patient, total_consensus) %>%
-  summarize(
-    total = n(),
-    prop = n()/unique(total_distinct)
-  )
-  
-
-p1 = ggplot(data = total_shared_summary, aes(x = total_consensus, 
-                                     y = prop,
-                                     fill = patient)) +
-  geom_bar(position = "dodge", stat = "identity") +
-  scale_y_continuous(labels = scales::percent)
-
-p2 = ggplot(data = total_guide, aes(x = total, fill = patient)) +
-  geom_bar(position = "dodge")
-
-#cowplot::plot_grid(p1, p2, nrow = 2)
-
-p1
-
-
-#ggsave("~/Desktop/unique_percent.png", cowplot::plot_grid(p1,x1, nrow = 2))
 ```
 
 
-\clearpage
+```{r lmm, echo = T, message=F}
 
-## Mixed model analysis
+## mixed model - pooled con group ##
+dat_all$new_var = with(dat_all, ifelse(from_consensus == "patient", "patient", "pooled"))
+lmm_pool = lmer(tgt_match_perc_exact ~ new_var + (from_consensus|patient), data = dat_all)
 
-```{r lmm}
-
-# patient vs pooled group
-
-dat_all$pool_con = with(dat_all, ifelse(from_consensus == "patient", "patient", "pooled subtype"))
-
-lmm_pool = lmer(tgt_match_perc_exact ~ pool_con + (pool_con|patient), data = dat_all)
-
-# all groups
+pooled_results = data.frame(
+  Model = "Pooled", 
+  lhs = "Pooled groups - patient"
+  )
+pooled_results$estimate = coef(summary(lmm_pool))["new_varpooled", "Estimate"]
+pooled_results$pvalue_unadjusted = coef(summary(lmm_pool))["new_varpooled", "Pr(>|t|)"]
+  
+## mixed model - separate con groups ##
 
 lmm = lmer(tgt_match_perc_exact ~ from_consensus + (from_consensus|patient), data = dat_all)
 
-ph_tests = summary(glht(lmm, linfct = mcp(from_consensus = "Tukey")), test = adjusted("none")) %>%
-  broom::tidy() %>%
-  select(lhs, p.value) %>% rename(pvalue_unadjusted = p.value)
+ph_tests = summary(glht(lmm, lsmeans::lsm(pairwise~from_consensus)),
+             test = adjusted("none")) %>% 
+  tidy() %>%
+  select(lhs, estimate, p.value) %>% 
+  rename(pvalue_unadjusted = p.value)
 
-ph_tests_adj = summary(glht(lmm, linfct = mcp(from_consensus = "Tukey")), 
-                       test = adjusted("single-step")) %>% broom::tidy() %>%
-  left_join(ph_tests, by = "lhs")
+## combine results and adjust p-values ##
+
+all_results = bind_rows(pooled_results, ph_tests %>% mutate(Model = " "))
+
+all_results$pvalue_adjusted = multtest::mt.rawp2adjp(all_results$pvalue_unadjusted, 
+                                                     proc = "SidakSS")$adjp[,2]
+
+## Overall F-test ##
 
 grp_test = anova(lmm)$`Pr(>F)`
 
-results_tab = ph_tests_adj %>% rename(pvalue = p.value, mean_difference = estimate) %>%
-  mutate(comparison = paste0(lhs, " == 0")) %>%
-  select(comparison, mean_difference, pvalue, pvalue_unadjusted) 
+```
 
-kable(arrange(results_tab, comparison),
-      caption = paste0("Post-hoc comparisons (p-values corrected using single-step method). Overall group test (at least one group is different) (p = ", round(grp_test, 3), ")"), digits = 4, format = "latex", booktabs = T, linesep = "") %>%
-  kableExtra::kable_styling(latex_options = c("striped"))
+\clearpage
+
+```{r results_table}
+
+results_tab = all_results %>% rename(mean_difference = estimate) %>%
+  mutate(
+    Comparison = paste0(lhs, " = 0"),
+    `Mean diff. (%)` = paste0(round(mean_difference * 100, 2), "%"),
+    `Adj. p-value (unadj.)` = 
+      paste0(round(pvalue_adjusted, 3), " (", round(pvalue_unadjusted, 3), ")")) %>%
+  select(Model, Comparison, `Mean diff. (%)`, `Adj. p-value (unadj.)`) 
+
+#for sorting
+results_tab_grp = results_tab %>%
+  subset(!grepl("patient", Comparison)) %>%
+  arrange(Comparison)
+results_tab_patient = results_tab %>%
+  subset(grepl("patient", Comparison)) %>%
+  arrange(Comparison)
+
+kable(summary, caption = "Summary of data.",
+            format = "latex", booktabs = T, linesep = "") %>%
+  kable_styling(latex_options = c("striped"))
+
+kable(bind_rows(results_tab_grp, results_tab_patient), 
+      caption = paste0("Mixed model results: post-hoc comparisons (p-values corrected using single-step method). Overall group test (at least one group is different) (p = ", round(grp_test, 3), ")"), 
+      digits = 4, format = "latex", booktabs = T, linesep = "") %>%
+  kable_styling(latex_options = c("striped")) %>%
+  collapse_rows(1, latex_hline = "major")
 
 ```
 
@@ -159,9 +155,9 @@ dat = subset(dat_all,  from_consensus != "patient") %>%
 
 lmm_sub = lmer(tgt_match_perc_exact ~ from_consensus + (from_consensus|patient), data = dat)
 
-ph_tests_sub = summary(glht(lmm_sub, linfct = mcp(from_consensus = "Tukey")), test = adjusted("none")) %>% broom::tidy() %>%
+ph_tests_sub = summary(glht(lmm_sub, linfct = mcp(from_consensus = "Tukey")), test = adjusted("none")) %>% tidy() %>%
   select(lhs, p.value) %>% rename(pvalue_unadjusted = p.value)
-ph_tests_adj_sub = summary(glht(lmm_sub, linfct = mcp(from_consensus = "Tukey")), test = adjusted("single-step")) %>% broom::tidy() %>%
+ph_tests_adj_sub = summary(glht(lmm_sub, linfct = mcp(from_consensus = "Tukey")), test = adjusted("single-step")) %>% tidy() %>%
   left_join(ph_tests_sub, by = "lhs")
 
 grp_test_sub = anova(lmm_sub)$`Pr(>F)`
@@ -179,8 +175,9 @@ knitr::kable(results_tab_sub,  caption = paste0("Post-hoc comparisons (p-values 
 
 ```{r reproducibility, results="asis"}
 suppressMessages({
+  library(multtest)
+  library(lsmeans)
   library(data.table)
-  library(xtable)
   })
 
 my_session_info <- devtools::session_info()
@@ -219,18 +216,20 @@ folder_info_in <- sub(paste0('/', my_current_input), '',
   # Dropping matching file names that do not match folder path
   folder_info <- data.table(
     name = 'location',
-    value = "https://github.com/bryanmayer/CRISPR")
+    value = "https://github.com/proychou/CRISPR")
   url_info <- data.table::data.table(
     name = 'repo',
-    value = "https://github.com/bryanmayer/CRISPR")
+    value = "https://github.com/proychou/CRISPR")
 
   my_session_info1 <- data.table::rbindlist(list(my_session_info1, url_info, folder_info, file_name))
 
-xtab <- xtable(x = my_session_info1,
-               caption = 'Supplemental Table: Reproducibility Software Session Information',
-               label = 'session_info')
-print(xtab, include.rownames = FALSE, include.colnames = FALSE, size = "\\footnotesize")
+kable(my_session_info1,
+               caption = 'Supplemental Table: Reproducibility Software Session Information')
+```
 
+\clearpage
+
+```{r supp2}
 
 # TABLE 2
 my_session_info2 <- data.table::data.table(
@@ -275,9 +274,7 @@ my_session_info2 <- rbindlist(list(my_session_info2, thisRow), use.names=TRUE, f
 setcolorder(my_session_info2, c('package', 'version', 'data version', 'date', 'source'))
 }
 
-xtab <- xtable(x = my_session_info2, caption = 'Supplemental Table: Reproducibility Software Package Version Information', label = 'session_info2')
-print(xtab, include.rownames = FALSE, size = "\\footnotesize", sanitize.text.function=function(x){x})
-
+kable(my_session_info2, caption = 'Supplemental Table: Reproducibility Software Package Version Information', )
 
 ```
 
