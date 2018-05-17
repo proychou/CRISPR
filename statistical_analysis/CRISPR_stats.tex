@@ -1,0 +1,423 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Statistical analysis for: Viral diversity is an obligate consideration in CRISPR/Cas9 designs for HIV cure.},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+  \title{Statistical analysis for: Viral diversity is an obligate consideration
+in CRISPR/Cas9 designs for HIV cure.}
+  \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+  \author{}
+  \preauthor{}\postauthor{}
+  \date{}
+  \predate{}\postdate{}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+
+\begin{document}
+\maketitle
+
+\subsection{Methods}\label{methods}
+
+The goal of this analysis is to test whether targeting percentages vary
+by the consensus strain used to create the guides. All analysis was done
+in R (see code below). To test whether there were overall differences in
+mean of target percentages, a mixed model was fit with target percentage
+as the outcome and the consensus strain as the predictors (\texttt{lme4}
+package). A random intercept for each subject by consensus strain was
+estimated to account for within subject and group variation across the
+repeated measures. An overall group test (testing whether any mean
+difference is significantly different than 0) was performed using ANOVA
+for mixed models using the \texttt{lmerTest} package. Post-hoc pairwise
+comparisons were performed using general linear hypothesis testing for
+mixed models generated by the \texttt{multcomp} and \texttt{lsmeans}
+packages. Adjustment for multiple testing used the Sidak single step
+method from the \texttt{multtest} package (proc = ``SidakSS'').
+
+\subsection{Citations}\label{citations}
+
+\begin{itemize}
+\item
+  lsmeans: Lenth RV (2016). ``Least-Squares Means: The R Package
+  lsmeans.'' \emph{Journal of Statistical Software}, \emph{69}(1), 1-33.
+  doi: 10.18637/jss.v069.i01 (URL:
+  \url{http://doi.org/10.18637/jss.v069.i01}).
+\item
+  multcomp: Hothorn T, Bretz F, Westfall P (2008). ``Simultaneous
+  Inference in General Parametric Models.'' \emph{Biometrical Journal},
+  \emph{50}(3), 346-363.
+\item
+  lme4: Bates D, Mächler M, Bolker B, Walker S (2015). ``Fitting Linear
+  Mixed-Effects Models Using lme4.'' \emph{Journal of Statistical
+  Software}, \emph{67}(1), 1-48. doi: 10.18637/jss.v067.i01 (URL:
+  \url{http://doi.org/10.18637/jss.v067.i01}).
+\item
+  lmerTest: Kuznetsova A, Brockhoff PB, Christensen RHB (2017).
+  ``lmerTest Package: Tests in Linear Mixed Effects Models.''
+  \emph{Journal of Statistical Software}, \emph{82}(13), 1-26. doi:
+  10.18637/jss.v082.i13 (URL:
+  \url{http://doi.org/10.18637/jss.v082.i13}).
+\item
+  multtest: Pollard KS, Dudoit S, van der Laan MJ (2005). \emph{Multiple
+  Testing Procedures: R multtest Package and Applications to Genomics,
+  in Bioinformatics and Computational Biology Solutions Using R and
+  Bioconductor}. Springer.
+\end{itemize}
+
+\clearpage
+
+\subsection{R code}\label{r-code}
+
+\subsubsection{Data read in}\label{data-read-in}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{suppressPackageStartupMessages}\NormalTok{(\{}
+  \KeywordTok{library}\NormalTok{(broom)}
+  \KeywordTok{library}\NormalTok{(lmerTest) }\CommentTok{# mixed models}
+  \KeywordTok{library}\NormalTok{(multcomp) }\CommentTok{# statistical tests}
+  \KeywordTok{library}\NormalTok{(tidyverse) }\CommentTok{# data manipulation and plots}
+  \KeywordTok{library}\NormalTok{(knitr)}
+  \KeywordTok{library}\NormalTok{(kableExtra)}
+  \KeywordTok{theme_set}\NormalTok{(}\KeywordTok{theme_bw}\NormalTok{())}
+\NormalTok{\})}
+
+\NormalTok{opts_chunk}\OperatorTok{$}\KeywordTok{set}\NormalTok{(}\DataTypeTok{tidy =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{cache =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{messages =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{warning =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{echo =} \OtherTok{FALSE}\NormalTok{)}
+
+\NormalTok{dat_all =}\StringTok{ }\KeywordTok{read_csv}\NormalTok{(}\DataTypeTok{file =} \StringTok{"All_pts_matches_highcov.csv"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(patient, gseq) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+    \DataTypeTok{total_consensus =} \KeywordTok{n_distinct}\NormalTok{(from_consensus),}
+    \DataTypeTok{groupings =} \KeywordTok{paste}\NormalTok{(}\KeywordTok{unique}\NormalTok{(from_consensus), }\DataTypeTok{collapse =} \StringTok{","}\NormalTok{),}
+    \DataTypeTok{range_pct =} \KeywordTok{diff}\NormalTok{(}\KeywordTok{range}\NormalTok{(tgt_match_perc_exact)),}
+    \DataTypeTok{conserved =}\NormalTok{ total_consensus }\OperatorTok{>=}\StringTok{ }\DecValTok{2}
+\NormalTok{    )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Parsed with column specification:
+## cols(
+##   patient = col_character(),
+##   from_consensus = col_character(),
+##   gseq = col_character(),
+##   dir = col_character(),
+##   guide = col_character(),
+##   pam = col_character(),
+##   match_conseq_start = col_integer(),
+##   match_conseq_end = col_integer(),
+##   tgt_depth = col_integer(),
+##   tgt_match_perc_exact = col_double(),
+##   has_degenerate_bases = col_logical()
+## )
+\end{verbatim}
+
+\clearpage
+
+\subsubsection{Analysis and models}\label{analysis-and-models}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{summary =}\StringTok{ }\NormalTok{dat_all }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(from_consensus, patient) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarize}\NormalTok{(}\DataTypeTok{n =} \KeywordTok{n}\NormalTok{(), }
+    \DataTypeTok{mean_match =} \KeywordTok{mean}\NormalTok{(tgt_match_perc_exact)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(from_consensus) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{summarize}\NormalTok{(}\DataTypeTok{patients =} \KeywordTok{n_distinct}\NormalTok{(patient), }\DataTypeTok{total_targets =} \KeywordTok{sum}\NormalTok{(n), }\DataTypeTok{mean_pct =} \KeywordTok{paste0}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\DecValTok{100} \OperatorTok{*}\StringTok{ }
+\StringTok{        }\KeywordTok{mean}\NormalTok{(mean_match), }\DecValTok{1}\NormalTok{), }\StringTok{"%"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### mixed model - pooled con group }\AlertTok{###}
+
+\NormalTok{dat_all}\OperatorTok{$}\NormalTok{new_var =}\StringTok{ }\KeywordTok{with}\NormalTok{(dat_all, }\KeywordTok{ifelse}\NormalTok{(from_consensus }\OperatorTok{==}\StringTok{ "patient"}\NormalTok{, }\StringTok{"patient"}\NormalTok{, }
+    \StringTok{"pooled"}\NormalTok{))}
+\NormalTok{lmm_pool =}\StringTok{ }\KeywordTok{lmer}\NormalTok{(tgt_match_perc_exact }\OperatorTok{~}\StringTok{ }\NormalTok{new_var }\OperatorTok{+}\StringTok{ }\NormalTok{(from_consensus }\OperatorTok{|}\StringTok{ }\NormalTok{patient), }
+    \DataTypeTok{data =}\NormalTok{ dat_all)}
+
+\NormalTok{pooled_results =}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{Model =} \StringTok{"Pooled"}\NormalTok{, }\DataTypeTok{lhs =} \StringTok{"Pooled groups - patient"}\NormalTok{)}
+\NormalTok{pooled_results}\OperatorTok{$}\NormalTok{estimate =}\StringTok{ }\KeywordTok{coef}\NormalTok{(}\KeywordTok{summary}\NormalTok{(lmm_pool))[}\StringTok{"new_varpooled"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{]}
+\NormalTok{pooled_results}\OperatorTok{$}\NormalTok{pvalue_unadjusted =}\StringTok{ }\KeywordTok{coef}\NormalTok{(}\KeywordTok{summary}\NormalTok{(lmm_pool))[}\StringTok{"new_varpooled"}\NormalTok{, }
+    \StringTok{"Pr(>|t|)"}\NormalTok{]}
+
+\NormalTok{### mixed model - separate by con groups }\AlertTok{###}
+
+\NormalTok{lmm =}\StringTok{ }\KeywordTok{lmer}\NormalTok{(tgt_match_perc_exact }\OperatorTok{~}\StringTok{ }\NormalTok{from_consensus }\OperatorTok{+}\StringTok{ }\NormalTok{(from_consensus }\OperatorTok{|}\StringTok{ }\NormalTok{patient), }
+    \DataTypeTok{data =}\NormalTok{ dat_all)}
+
+\NormalTok{ph_tests =}\StringTok{ }\KeywordTok{summary}\NormalTok{(}\KeywordTok{glht}\NormalTok{(lmm, lsmeans}\OperatorTok{::}\KeywordTok{lsm}\NormalTok{(pairwise }\OperatorTok{~}\StringTok{ }\NormalTok{from_consensus)), }\DataTypeTok{test =} \KeywordTok{adjusted}\NormalTok{(}\StringTok{"none"}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{tidy}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(lhs, estimate, p.value) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{pvalue_unadjusted =}\NormalTok{ p.value)}
+
+\CommentTok{# Overall F-test}
+\NormalTok{grp_test =}\StringTok{ }\KeywordTok{anova}\NormalTok{(lmm)}\OperatorTok{$}\StringTok{`}\DataTypeTok{Pr(>F)}\StringTok{`}
+
+\NormalTok{### combine results and adjust p-values }\AlertTok{###}
+
+\NormalTok{all_results =}\StringTok{ }\KeywordTok{bind_rows}\NormalTok{(pooled_results, ph_tests }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{Model =} \StringTok{" "}\NormalTok{))}
+
+\NormalTok{all_results}\OperatorTok{$}\NormalTok{pvalue_adjusted =}\StringTok{ }\NormalTok{multtest}\OperatorTok{::}\KeywordTok{mt.rawp2adjp}\NormalTok{(all_results}\OperatorTok{$}\NormalTok{pvalue_unadjusted, }
+    \DataTypeTok{proc =} \StringTok{"SidakSS"}\NormalTok{)}\OperatorTok{$}\NormalTok{adjp[, }\DecValTok{2}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\clearpage
+
+\rowcolors{2}{gray!6}{white}
+
+\begin{table}
+
+\caption{\label{tab:results_table}Summary of data.}
+\centering
+\begin{tabular}[t]{lrrl}
+\hiderowcolors
+\toprule
+from\_consensus & patients & total\_targets & mean\_pct\\
+\midrule
+\showrowcolors
+A & 4 & 173 & 86.5\%\\
+B & 4 & 488 & 85.3\%\\
+C & 4 & 99 & 84.7\%\\
+M & 4 & 365 & 85.3\%\\
+patient & 4 & 1173 & 81.6\%\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\rowcolors{2}{white}{white}
+
+\rowcolors{2}{gray!6}{white}
+
+\begin{table}
+
+\caption{\label{tab:results_table}Mixed model results: post-hoc comparisons (p-values corrected using single-step method). Overall group test (at least one group is different) (p = 0.148)}
+\centering
+\begin{tabular}[t]{llll}
+\hiderowcolors
+\toprule
+Model & Comparison & Mean diff. (\%) & Adj. p-value (unadj.)\\
+\midrule
+\showrowcolors
+ & A - B = 0 & 1.2\% & 0.458 (0.523)\\
+
+ & A - C = 0 & 1.71\% & 0.631 (0.408)\\
+
+ & A - M = 0 & 1.17\% & 0.804 (0.502)\\
+
+ & B - C = 0 & 0.51\% & 0.997 (0.836)\\
+
+ & B - M = 0 & -0.03\% & 1 (0.978)\\
+
+ & C - M = 0 & -0.54\% & 1 (0.812)\\
+
+ & A - patient = 0 & 4.88\% & 0.996 (0.138)\\
+
+ & B - patient = 0 & 3.68\% & 1 (0.054)\\
+
+ & C - patient = 0 & 3.17\% & 1 (0.388)\\
+
+\multirow{-10}{*}{\raggedright\arraybackslash } & M - patient = 0 & 3.71\% & 1 (0.087)\\
+\cmidrule{1-4}
+Pooled & Pooled groups - patient = 0 & 3.43\% & 0.251 (0.026)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\rowcolors{2}{white}{white}
+
+\clearpage
+
+\subsubsection{Version information}\label{version-information}
+
+\begin{table}[!h]
+
+\caption{\label{tab:reproducibility}Reproducibility Software Session Information}
+\centering
+\fontsize{7}{9}\selectfont
+\begin{tabular}[t]{ll}
+\toprule
+name & value.V1\\
+\midrule
+version & R version 3.5.0 (2018-04-23)\\
+system & x86\_64, darwin15.6.0\\
+ui & X11\\
+language & (EN)\\
+collate & en\_US.UTF-8\\
+tz & America/Los\_Angeles\\
+date & 2018-05-17\\
+repo & https://github.com/proychou/CRISPR\\
+location & https://github.com/proychou/CRISPR\\
+file name & CRISPR\_stats.Rmd\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!h]
+
+\caption{\label{tab:supp2} Reproducibility Software Package Version Information}
+\centering
+\fontsize{7}{9}\selectfont
+\begin{tabular}[t]{llll}
+\toprule
+package & version & date & source\\
+\midrule
+base & 3.5.0 & 2018-04-24 & local\\
+bindrcpp & 0.2.2 & 2018-03-29 & CRAN (R 3.5.0)\\
+Biobase & 2.40.0 & 2018-05-01 & Bioconductor\\
+BiocGenerics & 0.26.0 & 2018-05-01 & Bioconductor\\
+broom & 0.4.4 & 2018-03-29 & CRAN (R 3.5.0)\\
+data.table & 1.11.2 & 2018-05-08 & CRAN (R 3.5.0)\\
+datasets & 3.5.0 & 2018-04-24 & local\\
+dplyr & 0.7.4 & 2017-09-28 & CRAN (R 3.5.0)\\
+forcats & 0.3.0 & 2018-02-19 & CRAN (R 3.5.0)\\
+ggplot2 & 2.2.1 & 2016-12-30 & CRAN (R 3.5.0)\\
+graphics & 3.5.0 & 2018-04-24 & local\\
+grDevices & 3.5.0 & 2018-04-24 & local\\
+kableExtra & 0.8.0 & 2018-04-05 & CRAN (R 3.5.0)\\
+knitr & 1.20 & 2018-02-20 & CRAN (R 3.5.0)\\
+lme4 & 1.1-17 & 2018-04-03 & CRAN (R 3.5.0)\\
+lmerTest & 3.0-1 & 2018-04-23 & CRAN (R 3.5.0)\\
+lsmeans & 2.27-62 & 2018-05-11 & CRAN (R 3.5.0)\\
+MASS & 7.3-50 & 2018-04-30 & CRAN (R 3.5.0)\\
+Matrix & 1.2-14 & 2018-04-13 & CRAN (R 3.5.0)\\
+methods & 3.5.0 & 2018-04-24 & local\\
+multcomp & 1.4-8 & 2017-11-08 & CRAN (R 3.5.0)\\
+multtest & 2.36.0 & 2018-05-01 & Bioconductor\\
+mvtnorm & 1.0-7 & 2018-01-26 & CRAN (R 3.5.0)\\
+parallel & 3.5.0 & 2018-04-24 & local\\
+purrr & 0.2.4 & 2017-10-18 & CRAN (R 3.5.0)\\
+readr & 1.1.1 & 2017-05-16 & CRAN (R 3.5.0)\\
+stats & 3.5.0 & 2018-04-24 & local\\
+stringr & 1.3.1 & 2018-05-10 & CRAN (R 3.5.0)\\
+survival & 2.42-3 & 2018-04-16 & CRAN (R 3.5.0)\\
+TH.data & 1.0-8 & 2017-01-23 & CRAN (R 3.5.0)\\
+tibble & 1.4.2 & 2018-01-22 & CRAN (R 3.5.0)\\
+tidyr & 0.8.0 & 2018-01-29 & CRAN (R 3.5.0)\\
+tidyverse & 1.2.1 & 2017-11-14 & CRAN (R 3.5.0)\\
+utils & 3.5.0 & 2018-04-24 & local\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\end{document}
